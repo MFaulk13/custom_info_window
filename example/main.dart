@@ -1,4 +1,4 @@
-import 'package:clippy_flutter/triangle.dart';
+// import 'package:clippy_flutter/triangle.dart';
 import 'package:flutter/material.dart';
 
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -48,7 +48,7 @@ class _CustomInfoWindowExampleState extends State<CustomInfoWindowExample> {
         markerId: MarkerId("marker_id"),
         position: _latLng,
         onTap: () {
-          _customInfoWindowController.addInfoWindow(
+          _customInfoWindowController.addInfoWindow!(
             Column(
               children: [
                 Expanded(
@@ -73,7 +73,7 @@ class _CustomInfoWindowExampleState extends State<CustomInfoWindowExample> {
                           Text(
                             "I am here",
                             style:
-                                Theme.of(context).textTheme.headline6.copyWith(
+                                Theme.of(context).textTheme.headline6?.copyWith(
                                       color: Colors.white,
                                     ),
                           )
@@ -84,14 +84,14 @@ class _CustomInfoWindowExampleState extends State<CustomInfoWindowExample> {
                     height: double.infinity,
                   ),
                 ),
-                Triangle.isosceles(
-                  edge: Edge.BOTTOM,
-                  child: Container(
-                    color: Colors.blue,
-                    width: 20.0,
-                    height: 10.0,
-                  ),
-                ),
+                // Triangle.isosceles(
+                //   edge: Edge.BOTTOM,
+                //   child: Container(
+                //     color: Colors.blue,
+                //     width: 20.0,
+                //     height: 10.0,
+                //   ),
+                // ),
               ],
             ),
             _latLng,
@@ -108,10 +108,10 @@ class _CustomInfoWindowExampleState extends State<CustomInfoWindowExample> {
         children: <Widget>[
           GoogleMap(
             onTap: (position) {
-              _customInfoWindowController.hideInfoWindow();
+              _customInfoWindowController.hideInfoWindow!();
             },
             onCameraMove: (position) {
-              _customInfoWindowController.onCameraMove();
+              _customInfoWindowController.onCameraMove!();
             },
             onMapCreated: (GoogleMapController controller) async {
               _customInfoWindowController.googleMapController = controller;
@@ -123,6 +123,7 @@ class _CustomInfoWindowExampleState extends State<CustomInfoWindowExample> {
             ),
           ),
           CustomInfoWindow(
+            (top, left, width, height) => null,
             controller: _customInfoWindowController,
             height: 75,
             width: 150,

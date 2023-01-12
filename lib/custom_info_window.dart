@@ -1,9 +1,10 @@
 /// A widget based custom info window for google_maps_flutter package.
 library custom_info_window;
 
+/// A widget based custom info window for google_maps_flutter package.
 import 'dart:io';
-import 'package:flutter/material.dart';
 
+import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 /// Controller to add, update and control the custom info window.
@@ -23,6 +24,15 @@ class CustomInfoWindowController {
   /// Holds [GoogleMapController] for calculating [CustomInfoWindow] position.
   GoogleMapController? googleMapController;
 
+  final Duration animationDuration;
+
+  final Curve animationCurve;
+
+  CustomInfoWindowController({
+    this.animationDuration = const Duration(milliseconds: 300),
+    this.animationCurve = Curves.easeInOut
+  });
+
   void dispose() {
     addInfoWindow = null;
     onCameraMove = null;
@@ -33,7 +43,7 @@ class CustomInfoWindowController {
 }
 
 /// A stateful widget responsible to create widget based custom info window.
-class CustomInfoWindow extends StatefulWidget {
+class CustomInfoWindow extends StatefulWidget{
   /// A [CustomInfoWindowController] to manipulate [CustomInfoWindow] state.
   final CustomInfoWindowController controller;
 
@@ -47,6 +57,8 @@ class CustomInfoWindow extends StatefulWidget {
   final double width;
 
   final Function(double top, double left, double width, double height) onChange;
+
+  
 
   const CustomInfoWindow(
     this.onChange, {
@@ -66,12 +78,16 @@ class CustomInfoWindow extends StatefulWidget {
   _CustomInfoWindowState createState() => _CustomInfoWindowState();
 }
 
-class _CustomInfoWindowState extends State<CustomInfoWindow> {
+class _CustomInfoWindowState extends State<CustomInfoWindow> with TickerProviderStateMixin {
   bool _showNow = false;
   double _leftMargin = 0;
   double _topMargin = 0;
   Widget? _child;
   LatLng? _latLng;
+  Duration? _animDuration;
+  Curve? _animCurve;
+
+  late AnimationController _animController;
 
   @override
   void initState() {
@@ -80,6 +96,14 @@ class _CustomInfoWindowState extends State<CustomInfoWindow> {
     widget.controller.onCameraMove = _onCameraMove;
     widget.controller.hideInfoWindow = _hideInfoWindow;
     widget.controller.showInfoWindow = _showInfoWindow;
+
+    _animController = AnimationController(vsync: this, duration: widget.controller.animationDuration);
+    _animController.addListener(_animListener);
+  }
+
+  void _animListener() {
+    setState(() {
+    });
   }
 
   /// Calculate the position on [CustomInfoWindow] and redraw on screen.
@@ -102,6 +126,7 @@ class _CustomInfoWindowState extends State<CustomInfoWindow> {
       _showNow = true;
       _leftMargin = left;
       _topMargin = top;
+      _animController.forward();
     });
     widget.onChange.call(top, left, widget.width, widget.height);
   }
@@ -125,6 +150,7 @@ class _CustomInfoWindowState extends State<CustomInfoWindow> {
   void _hideInfoWindow() {
     setState(() {
       _showNow = false;
+      _animController.reverse();
     });
   }
 
@@ -138,19 +164,34 @@ class _CustomInfoWindowState extends State<CustomInfoWindow> {
     return Positioned(
       left: _leftMargin,
       top: _topMargin,
-      child: Visibility(
-        visible: (_showNow == false ||
-                (_leftMargin == 0 && _topMargin == 0) ||
-                _child == null ||
-                _latLng == null)
-            ? false
-            : true,
-        child: Container(
-          child: _child,
-          height: widget.height,
-          width: widget.width,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _animController, curve: widget.controller.animationCurve, reverseCurve: widget.controller.animationCurve)),
+        child: Opacity(
+          opacity: _animController.value,
+          child: SizedBox(
+            height: widget.height,
+            width: widget.width,
+            child: _child,
+          ),
         ),
       ),
     );
+    // return Positioned(
+    //   left: _leftMargin,
+    //   top: _topMargin,
+    //   child: Visibility(
+    //     visible: (_showNow == false ||
+    //             (_leftMargin == 0 && _topMargin == 0) ||
+    //             _child == null ||
+    //             _latLng == null)
+    //         ? false
+    //         : true,
+    //     child: Container(
+    //       child: _child,
+    //       height: widget.height,
+    //       width: widget.width,
+    //     ),
+    //   ),
+    // );
   }
 }
