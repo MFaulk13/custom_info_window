@@ -2,7 +2,6 @@
 library custom_info_window;
 
 import 'package:flutter/material.dart';
-
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 /// Controller to add, update and control the custom info window.
@@ -25,6 +24,15 @@ class CustomInfoWindowController {
   /// Holds [GoogleMapController] for calculating [CustomInfoWindow] position.
   GoogleMapController? googleMapController;
 
+  final Duration animationDuration;
+
+  final Curve animationCurve;
+
+  CustomInfoWindowController({
+    this.animationDuration = const Duration(milliseconds: 300),
+    this.animationCurve = Curves.easeInOut
+  });
+
   void dispose() {
     addInfoWindow = null;
     onCameraMove = null;
@@ -35,11 +43,13 @@ class CustomInfoWindowController {
 }
 
 /// A stateful widget responsible to create widget based custom info window.
-class CustomInfoWindow extends StatefulWidget {
+class CustomInfoWindow extends StatefulWidget{
   /// A [CustomInfoWindowController] to manipulate [CustomInfoWindow] state.
   final CustomInfoWindowController controller;
 
   final Function(double top, double left, double width, double height) onChange;
+
+  
 
   const CustomInfoWindow(
     this.onChange, {
@@ -50,7 +60,7 @@ class CustomInfoWindow extends StatefulWidget {
   _CustomInfoWindowState createState() => _CustomInfoWindowState();
 }
 
-class _CustomInfoWindowState extends State<CustomInfoWindow> {
+class _CustomInfoWindowState extends State<CustomInfoWindow> with TickerProviderStateMixin {
   bool _showNow = false;
   double _leftMargin = 0;
   double _topMargin = 0;
@@ -60,6 +70,8 @@ class _CustomInfoWindowState extends State<CustomInfoWindow> {
   double _height = 50;
   double _width = 100;
 
+  late AnimationController _animController;
+
   @override
   void initState() {
     super.initState();
@@ -67,6 +79,14 @@ class _CustomInfoWindowState extends State<CustomInfoWindow> {
     widget.controller.onCameraMove = _onCameraMove;
     widget.controller.hideInfoWindow = _hideInfoWindow;
     widget.controller.showInfoWindow = _showInfoWindow;
+
+    _animController = AnimationController(vsync: this, duration: widget.controller.animationDuration);
+    _animController.addListener(_animListener);
+  }
+
+  void _animListener() {
+    setState(() {
+    });
   }
 
   /// Calculate the position on [CustomInfoWindow] and redraw on screen.
@@ -89,6 +109,7 @@ class _CustomInfoWindowState extends State<CustomInfoWindow> {
       _showNow = true;
       _leftMargin = left;
       _topMargin = top;
+      _animController.forward();
     });
     widget.onChange.call(top, left, _width, _height);
   }
@@ -113,6 +134,7 @@ class _CustomInfoWindowState extends State<CustomInfoWindow> {
   void _hideInfoWindow() {
     setState(() {
       _showNow = false;
+      _animController.reverse();
     });
   }
 
@@ -126,17 +148,17 @@ class _CustomInfoWindowState extends State<CustomInfoWindow> {
     return Positioned(
       left: _leftMargin,
       top: _topMargin,
-      child: Visibility(
-        visible: (_showNow == false ||
-                (_leftMargin == 0 && _topMargin == 0) ||
-                _child == null ||
-                _latLng == null)
-            ? false
-            : true,
-        child: Container(
-          child: _child,
-          height: _height,
-          width: _width,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0, end: 1).animate(
+          CurvedAnimation(parent: _animController, curve: widget.controller.animationCurve, reverseCurve: widget.controller.animationCurve)
+        ),
+        child: Opacity(
+          opacity: _animController.value,
+          child: SizedBox(
+            height: _height,
+            width: _width,
+            child: _child,
+          ),
         ),
       ),
     );
